@@ -11,7 +11,7 @@ contract CheapNFT is ERC721URIStorage {
     address marketplaceContract;
     event NFTMinted(uint256, string);
 
-    constructor() ERC721("Cheap Bored Club", "CHEAPP") {}
+    constructor() ERC721("Cheapppp Bored Club", "CHEAPPPP") {}
 
     function mint(string memory _tokenURI) public {
         _tokenIds.increment();

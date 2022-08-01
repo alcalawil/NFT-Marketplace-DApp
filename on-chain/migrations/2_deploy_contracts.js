@@ -6,8 +6,8 @@ module.exports = async function (deployer) {
 	// deploy only for testing purposes
 	let erc20TokenAddress = process.env.WETH_ADDRESS;
 
-	if (process.env.NETWORK === 'ganache') {
-		await deployer.deploy(CheapToken, 'CheapToken', 'CHPT');
+	if (process.env.NETWORK === 'development') {
+		await deployer.deploy(CheapToken, 'CheapTTTToken', 'CHPTTTT');
 		await deployer.deploy(CheapNFT);
 		const cheapToken = await CheapToken.deployed();
 		erc20TokenAddress = cheapToken.address;
