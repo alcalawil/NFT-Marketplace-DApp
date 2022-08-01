@@ -1,8 +1,18 @@
 const Marketplace = artifacts.require("Marketplace");
 const CheapNFT = artifacts.require("CheapNFT");
+const CheapToken = artifacts.require("CheapToken");
 
 module.exports = async function (deployer) {
-	await deployer.deploy(Marketplace);
-	const marketplace = await Marketplace.deployed();
-	await deployer.deploy(CheapNFT, marketplace.address);
+	// deploy only for testing purposes
+	let erc20TokenAddress = process.env.WETH_ADDRESS;
+
+	if (process.env.NETWORK === 'ganache') {
+		await deployer.deploy(CheapToken, 'CheapToken', 'CHPT');
+		await deployer.deploy(CheapNFT);
+		const cheapToken = await CheapToken.deployed();
+		erc20TokenAddress = cheapToken.address;
+	}
+
+	console.log(">>> ERC20 token address: " + erc20TokenAddress);
+	await deployer.deploy(Marketplace, erc20TokenAddress);
 };

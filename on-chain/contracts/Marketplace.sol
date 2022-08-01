@@ -1,73 +1,118 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.15;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract Marketplace {
-    mapping(bytes32 => bool) claimed;
-    event DebugLog(string msg);
+    IERC20 _erc20Token;
+    struct Signature {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
 
-    function signatureIsValid(
-        address signer,
-        bytes32 _hashedMessage,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
-    ) public pure returns (bool) {
-        address recovered = recoverAddress(_hashedMessage, _v, _r, _s);
-        // emit logSigner("Signers :::", signer, recovered);
+    event DebugLog(string msg, address, address, address, address);
 
-        return signer == recovered;
+    constructor(address token) {
+        _erc20Token = IERC20(token);
     }
 
     function settleTransaction(
+        address nftContractAddress,
+        uint256 tokenId,
         bytes32 hashedMessage,
         address ownerAddress,
-        uint8 owner_v,
-        bytes32 owner_r,
-        bytes32 owner_s,
+        Signature memory ownerSignature,
         address buyerAddress,
-        uint8 buyer_v,
-        bytes32 buyer_r,
-        bytes32 buyer_s
-    ) external {
+        Signature memory buyerSignature,
+        uint256 price
+    ) public payable {
         // require owner signature is valid
+        _validateSignatures(
+            hashedMessage,
+            ownerAddress,
+            ownerSignature,
+            buyerAddress,
+            buyerSignature
+        );
+
+        emit DebugLog(
+            "both signatures are valid",
+            nftContractAddress,
+            msg.sender,
+            ownerAddress,
+            buyerAddress
+        );
+
+        _doTrade(
+            tokenId,
+            nftContractAddress,
+            price,
+            ownerAddress,
+            buyerAddress
+        );
+    }
+
+    function _doTrade(
+        uint256 tokenId,
+        address nftContractAddress,
+        uint256 amount,
+        address ownerAddress,
+        address buyerAddress
+    ) internal {
+        // send nft to buyer
+        IERC721(nftContractAddress).transferFrom(
+            ownerAddress,
+            buyerAddress,
+            tokenId
+        );
+
+        // send ERC20 tokens to owner
+        _erc20Token.transferFrom(buyerAddress, ownerAddress, amount);
+    }
+
+    function _validateSignatures(
+        bytes32 hashedMessage,
+        address ownerAddress,
+        Signature memory ownerSignature,
+        address buyerAddress,
+        Signature memory buyerSignature
+    ) internal pure {
         require(
-            signatureIsValid(
-                ownerAddress,
-                hashedMessage,
-                owner_v,
-                owner_r,
-                owner_s
-            ),
+            signatureIsValid(ownerAddress, hashedMessage, ownerSignature),
             "Invalid owner signature or incorrect hash"
         );
 
         // require buyer signature is valid
         require(
-            signatureIsValid(
-                buyerAddress,
-                hashedMessage,
-                buyer_v,
-                buyer_r,
-                buyer_s
-            ),
+            signatureIsValid(buyerAddress, hashedMessage, buyerSignature),
             "Invalid owner signature or incorrect hash"
         );
-
-        emit DebugLog("both signatures are valid");
-
-        //your logic for the copon here
-        // transfer nft from owner to buyer
     }
 
-    function recoverAddress(
-        bytes32 hash,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) internal pure returns (address) {
+    function signatureIsValid(
+        address signer,
+        bytes32 _hashedMessage,
+        Signature memory signature
+    ) public pure returns (bool) {
+        address recovered = recoverAddress(_hashedMessage, signature);
+        return signer == recovered;
+    }
+
+    function recoverAddress(bytes32 hash, Signature memory _signature)
+        internal
+        pure
+        returns (address)
+    {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
-        address signer = ecrecover(prefixedHash, v, r, s);
+        address signer = ecrecover(
+            prefixedHash,
+            _signature.v,
+            _signature.r,
+            _signature.s
+        );
 
         return signer;
     }

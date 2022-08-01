@@ -23,6 +23,9 @@
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
+require('dotenv').config();
+// const infuraKey = process.env["INFURA_KEY"];
+
 module.exports = {
   /**
    * Networks define how you connect to your ethereum client and let you set the
@@ -78,7 +81,7 @@ module.exports = {
 
   // Set default mocha options here, use special reporters, etc.
   mocha: {
-    // timeout: 100000
+    // timeout: 100000,
   },
 
   // Configure your compilers
