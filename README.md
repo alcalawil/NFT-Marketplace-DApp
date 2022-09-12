@@ -1,3 +1,3 @@
 # NFT Cheap Marketplace Dapp
 
-A cheap solution for marketplace auctions
+An NFT Marketplace with off chain auctions
